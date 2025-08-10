@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Building Energy Predictor - Neural Network Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .panel h2 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2d3748;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #cbd5e0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .value-display {
+            min-width: 50px;
+            text-align: right;
+            font-weight: bold;
+            color: #667eea;
+            font-size: 0.9em;
+        }
+
+        .network-container {
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 20px;
+            position: relative;
+            height: 500px;
+        }
+
+        #networkCanvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .prediction-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .prediction-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .prediction-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .accuracy-meter {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .accuracy-bar {
+            width: 100%;
+            height: 30px;
+            background: #e2e8f0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .accuracy-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f56565 0%, #f6ad55 50%, #48bb78 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .train-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .train-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .train-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .reset-btn {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .reset-btn:hover {
+            background: #cbd5e0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .training-status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .status-idle {
+            background: #e6fffa;
+            color: #234e52;
+        }
+
+        .status-training {
+            background: #fef5e7;
+            color: #7d4f07;
+            animation: pulse 2s infinite;
+        }
+
+        .status-complete {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .neuron {
+            fill: #667eea;
+            stroke: white;
+            stroke-width: 2;
+        }
+
+        .neuron.active {
+            fill: #fbbf24;
+            filter: drop-shadow(0 0 10px #fbbf24);
+        }
+
+        .connection {
+            stroke: #4a5568;
+            stroke-width: 1;
+            opacity: 0.3;
+        }
+
+        .connection.active {
+            stroke: #fbbf24;
+            stroke-width: 2;
+            opacity: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 AI Building Energy Predictor</h1>
+        <p class="subtitle">Watch a neural network learn to predict building energy consumption in real-time</p>
+        
+        <div class="controls-row">
+            <button class="train-btn" id="trainBtn" onclick="startTraining()">Start Training</button>
+            <button class="reset-btn" onclick="resetNetwork()">Reset Network</button>
+        </div>
+
+        <div class="training-status status-idle" id="status">
+            Ready to train - Adjust building parameters and click "Start Training"
+        </div>
+        
+        <div class="main-grid">
+            <div class="panel">
+                <h2>📊 Input Features</h2>
+                
+                <div class="input-group">
+                    <label>Building Area (m²)</label>
+                    <div class="slider-container">
+                        <input type="range" id="area" min="100" max="1000" value="500" step="50">
+                        <span class="value-display" id="areaValue">500</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Window Ratio (%)</label>
+                    <div class="slider-container">
+                        <input type="range" id="windows" min="10" max="70" value="30" step="5">
+                        <span class="value-display" id="windowsValue">30%</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Insulation Level</label>
+                    <div class="slider-container">
+                        <input type="range" id="insulation" min="1" max="10" value="5" step="1">
+                        <span class="value-display" id="insulationValue">5</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>HVAC Efficiency</label>
+                    <div class="slider-container">
+                        <input type="range" id="hvac" min="1" max="10" value="5" step="1">
+                        <span class="value-display" id="hvacValue">5</span>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>Occupancy Level</label>
+                    <div class="slider-container">
+                        <input type="range" id="occupancy" min="1" max="10" value="5" step="1">
+                        <span class="value-display" id="occupancyValue">5</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel" style="padding: 0;">
+                <div class="network-container">
+                    <canvas id="networkCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel output-panel">
+                <h2>🎯 AI Prediction</h2>
+                
+                <div class="prediction-card">
+                    <div class="prediction-value" id="prediction">--</div>
+                    <div class="prediction-label">kWh/m²/year</div>
+                </div>
+                
+                <div class="accuracy-meter">
+                    <label style="font-weight: 600; color: #4a5568; margin-bottom: 10px; display: block;">Model Accuracy</label>
+                    <div class="accuracy-bar">
+                        <div class="accuracy-fill" id="accuracyBar" style="width: 0%">0%</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value" id="epoch">0</div>
+                    <div class="stat-label">Training Epochs</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value" id="loss">--</div>
+                    <div class="stat-label">Loss Function</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="samples">0</div>
+                <div class="stat-label">Training Samples</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="neurons">25</div>
+                <div class="stat-label">Total Neurons</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="connections">90</div>
+                <div class="stat-label">Connections</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Neural Network Architecture
+        const architecture = [5, 10, 8, 1]; // Input, Hidden1, Hidden2, Output
+        let network = {
+            layers: [],
+            weights: [],
+            biases: [],
+            activations: []
+        };
+
+        // Training data storage
+        let trainingData = [];
+        let isTraining = false;
+        let epoch = 0;
+        let currentLoss = 1.0;
+        let accuracy = 0;
+
+        // Canvas setup
+        const canvas = document.getElementById('networkCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationFrame;
+
+        // Initialize network
+        function initializeNetwork() {
+            network.layers = [];
+            network.weights = [];
+            network.biases = [];
+            
+            // Initialize layers with random weights
+            for (let i = 0; i < architecture.length - 1; i++) {
+                const weights = [];
+                for (let j = 0; j < architecture[i]; j++) {
+                    const neuronWeights = [];
+                    for (let k = 0; k < architecture[i + 1]; k++) {
+                        neuronWeights.push((Math.random() - 0.5) * 2);
+                    }
+                    weights.push(neuronWeights);
+                }
+                network.weights.push(weights);
+                network.biases.push(Array(architecture[i + 1]).fill(0).map(() => (Math.random() - 0.5) * 2));
+            }
+            
+            // Initialize activations
+            for (let i = 0; i < architecture.length; i++) {
+                network.activations.push(Array(architecture[i]).fill(0));
+            }
+        }
+
+        // Activation function (sigmoid)
+        function sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+
+        // Forward propagation
+        function forward(inputs) {
+            network.activations[0] = inputs;
+            
+            for (let layer = 0; layer < network.weights.length; layer++) {
+                const nextActivations = [];
+                for (let j = 0; j < architecture[layer + 1]; j++) {
+                    let sum = network.biases[layer][j];
+                    for (let i = 0; i < architecture[layer]; i++) {
+                        sum += network.activations[layer][i] * network.weights[layer][i][j];
+                    }
+                    nextActivations.push(sigmoid(sum));
+                }
+                network.activations[layer + 1] = nextActivations;
+            }
+            
+            return network.activations[network.activations.length - 1][0];
+        }
+
+        // Get current inputs
+        function getCurrentInputs() {
+            return [
+                parseFloat(document.getElementById('area').value) / 1000,
+                parseFloat(document.getElementById('windows').value) / 100,
+                parseFloat(document.getElementById('insulation').value) / 10,
+                parseFloat(document.getElementById('hvac').value) / 10,
+                parseFloat(document.getElementById('occupancy').value) / 10
+            ];
+        }
+
+        // Calculate "true" energy (simplified physics model for demo)
+        function calculateTrueEnergy(inputs) {
+            const area = inputs[0] * 1000;
+            const windows = inputs[1] * 100;
+            const insulation = inputs[2] * 10;
+            const hvac = inputs[3] * 10;
+            const occupancy = inputs[4] * 10;
+            
+            let baseEnergy = 150;
+            baseEnergy += (windows - 30) * 1.5;
+            baseEnergy -= (insulation - 5) * 8;
+            baseEnergy -= (hvac - 5) * 6;
+            baseEnergy += (occupancy - 5) * 4;
+            baseEnergy *= (area / 500);
+            
+            return Math.max(50, Math.min(300, baseEnergy));
+        }
+
+        // Generate training data
+        function generateTrainingData() {
+            trainingData = [];
+            for (let i = 0; i < 100; i++) {
+                const inputs = [
+                    Math.random(),
+                    Math.random() * 0.6 + 0.1,
+                    Math.random(),
+                    Math.random(),
+                    Math.random()
+                ];
+                const output = calculateTrueEnergy(inputs) / 300; // Normalize
+                trainingData.push({ inputs, output });
+            }
+        }
+
+        // Simple backpropagation (simplified for demo)
+        function train() {
+            const learningRate = 0.1;
+            const batchSize = 10;
+            
+            for (let b = 0; b < batchSize; b++) {
+                const sample = trainingData[Math.floor(Math.random() * trainingData.length)];
+                const prediction = forward(sample.inputs);
+                const error = sample.output - prediction;
+                
+                // Update weights (simplified gradient descent)
+                for (let layer = network.weights.length - 1; layer >= 0; layer--) {
+                    for (let i = 0; i < network.weights[layer].length; i++) {
+                        for (let j = 0; j < network.weights[layer][i].length; j++) {
+                            const gradient = error * network.activations[layer][i] * learningRate;
+                            network.weights[layer][i][j] += gradient;
+                        }
+                    }
+                }
+            }
+            
+            // Calculate loss
+            let totalError = 0;
+            for (let i = 0; i < Math.min(20, trainingData.length); i++) {
+                const sample = trainingData[i];
+                const prediction = forward(sample.inputs);
+                totalError += Math.pow(sample.output - prediction, 2);
+            }
+            currentLoss = totalError / 20;
+            accuracy = Math.max(0, Math.min(100, 100 - currentLoss * 100));
+        }
+
+        // Draw neural network
+        function drawNetwork() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const layerSpacing = canvas.width / (architecture.length + 1);
+            const nodePositions = [];
+            
+            // Calculate node positions
+            for (let layer = 0; layer < architecture.length; layer++) {
+                const x = layerSpacing * (layer + 1);
+                const layerNodes = [];
+                const nodeSpacing = canvas.height / (architecture[layer] + 1);
+                
+                for (let node = 0; node < architecture[layer]; node++) {
+                    const y = nodeSpacing * (node + 1);
+                    layerNodes.push({ x, y });
+                }
+                nodePositions.push(layerNodes);
+            }
+            
+            // Draw connections
+            for (let layer = 0; layer < architecture.length - 1; layer++) {
+                for (let i = 0; i < architecture[layer]; i++) {
+                    for (let j = 0; j < architecture[layer + 1]; j++) {
+                        const from = nodePositions[layer][i];
+                        const to = nodePositions[layer + 1][j];
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(from.x, from.y);
+                        ctx.lineTo(to.x, to.y);
+                        
+                        const weight = network.weights[layer] && network.weights[layer][i] 
+                            ? Math.abs(network.weights[layer][i][j]) : 0.5;
+                        const activation = network.activations[layer][i] * network.activations[layer + 1][j];
+                        
+                        if (activation > 0.1) {
+                            ctx.strokeStyle = `rgba(251, 191, 36, ${Math.min(1, activation)})`;
+                            ctx.lineWidth = 2;
+                        } else {
+                            ctx.strokeStyle = `rgba(74, 85, 104, ${0.2 + weight * 0.3})`;
+                            ctx.lineWidth = Math.max(0.5, weight * 2);
+                        }
+                        
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Draw nodes
+            for (let layer = 0; layer < architecture.length; layer++) {
+                for (let node = 0; node < architecture[layer]; node++) {
+                    const pos = nodePositions[layer][node];
+                    const activation = network.activations[layer][node];
+                    
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, 15, 0, Math.PI * 2);
+                    
+                    if (activation > 0.5) {
+                        ctx.fillStyle = `rgba(251, 191, 36, ${activation})`;
+                        ctx.shadowBlur = 20;
+                        ctx.shadowColor = '#fbbf24';
+                    } else {
+                        ctx.fillStyle = `rgba(102, 126, 234, ${0.5 + activation * 0.5})`;
+                        ctx.shadowBlur = 0;
+                    }
+                    
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // Layer labels
+                    if (node === 0) {
+                        ctx.fillStyle = '#718096';
+                        ctx.font = '12px sans-serif';
+                        ctx.textAlign = 'center';
+                        const label = layer === 0 ? 'Input' : layer === architecture.length - 1 ? 'Output' : `Hidden ${layer}`;
+                        ctx.fillText(label, pos.x, canvas.height - 10);
+                    }
+                }
+            }
+        }
+
+        // Update displays
+        function updateDisplays() {
+            document.getElementById('areaValue').textContent = document.getElementById('area').value;
+            document.getElementById('windowsValue').textContent = document.getElementById('windows').value + '%';
+            document.getElementById('insulationValue').textContent = document.getElementById('insulation').value;
+            document.getElementById('hvacValue').textContent = document.getElementById('hvac').value;
+            document.getElementById('occupancyValue').textContent = document.getElementById('occupancy').value;
+            
+            // Update prediction
+            const inputs = getCurrentInputs();
+            const prediction = forward(inputs) * 300;
+            document.getElementById('prediction').textContent = Math.round(prediction);
+            
+            // Update stats
+            document.getElementById('epoch').textContent = epoch;
+            document.getElementById('loss').textContent = currentLoss.toFixed(4);
+            document.getElementById('samples').textContent = trainingData.length;
+            
+            // Update accuracy bar
+            const accuracyBar = document.getElementById('accuracyBar');
+            accuracyBar.style.width = accuracy + '%';
+            accuracyBar.textContent = Math.round(accuracy) + '%';
+            
+            // Color prediction card based on accuracy
+            const predCard = document.querySelector('.prediction-card');
+            if (accuracy > 90) {
+                predCard.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+            } else if (accuracy > 70) {
+                predCard.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            } else {
+                predCard.style.background = 'linear-gradient(135deg, #f56565 0%, #e53e3e 100%)';
+            }
+        }
+
+        // Training loop
+        async function startTraining() {
+            if (isTraining) return;
+            
+            isTraining = true;
+            document.getElementById('trainBtn').disabled = true;
+            document.getElementById('status').className = 'training-status status-training';
+            document.getElementById('status').textContent = '🔄 Training in progress... Watch the network learn!';
+            
+            generateTrainingData();
+            
+            const maxEpochs = 100;
+            
+            for (let e = 0; e < maxEpochs; e++) {
+                if (!isTraining) break;
+                
+                epoch = e + 1;
+                train();
+                updateDisplays();
+                drawNetwork();
+                
+                // Slow down for visualization
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            isTraining = false;
+            document.getElementById('trainBtn').disabled = false;
+            document.getElementById('status').className = 'training-status status-complete';
+            document.getElementById('status').textContent = '✅ Training complete! Model accuracy: ' + Math.round(accuracy) + '%';
+        }
+
+        // Reset network
+        function resetNetwork() {
+            isTraining = false;
+            epoch = 0;
+            currentLoss = 1.0;
+            accuracy = 0;
+            trainingData = [];
+            initializeNetwork();
+            updateDisplays();
+            drawNetwork();
+            document.getElementById('trainBtn').disabled = false;
+            document.getElementById('status').className = 'training-status status-idle';
+            document.getElementById('status').textContent = 'Ready to train - Adjust building parameters and click "Start Training"';
+        }
+
+        // Animation loop
+        function animate() {
+            drawNetwork();
+            updateDisplays();
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        // Event listeners
+        document.getElementById('area').addEventListener('input', updateDisplays);
+        document.getElementById('windows').addEventListener('input', updateDisplays);
+        document.getElementById('insulation').addEventListener('input', updateDisplays);
+        document.getElementById('hvac').addEventListener('input', updateDisplays);
+        document.getElementById('occupancy').addEventListener('input', updateDisplays);
+
+        // Initialize
+        initializeNetwork();
+        animate();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            drawNetwork();
+        });
+    </script>
+</body>
+</html>
